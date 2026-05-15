@@ -12,28 +12,38 @@ def extract_data(email_text):
     print("\n🧠 Sending data to Groq...\n")
 
     prompt = f"""
-Convert this financial email into structured JSON.
+Extract ONLY the first 5 financial transactions
+from this email and return a VALID JSON array.
 
 Email:
 {email_text}
 
-Return ONLY JSON with fields:
+Return ONLY pure JSON.
+
+Fields:
 customer_name,
 transaction_id,
 amount,
-payment_method
+payment_method,
+account_number,
+transaction_date,
+currency,
+transaction_type,
+merchant_name,
+status
 """
 
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            
+
             messages=[
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
+
             temperature=0
         )
 
@@ -45,5 +55,7 @@ payment_method
         return output
 
     except Exception as e:
+
         print("❌ GROQ ERROR:", e)
+
         return "LLM FAILED"
