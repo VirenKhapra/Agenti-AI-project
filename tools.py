@@ -2,6 +2,7 @@ from langchain.tools import Tool
 
 from data_input import get_email_text
 from llm_extractor import extract_data
+from validator import validate_data
 
 
 # Tool 1 (extracting the emial)
@@ -22,3 +23,12 @@ llm_tool = Tool(
     description="Extracts structured financial information from email text."
 )
 
+# Tool 3 (validating extracted JSON)
+def validator_tool_wrapper(data):
+    return validate_data(data)
+
+validator_tool = Tool(
+    name="Validator Tool",
+    func=validator_tool_wrapper,
+    description="Validates extracted financial JSON data."
+)
