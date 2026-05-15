@@ -1,61 +1,30 @@
-import os
-from groq import Groq
+from langchain.agents import initialize_agent
+from langchain.agents import AgentType
+from langchain_groq import ChatGroq
 
-# 🔹 Create Groq client
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
+from tools import email_tool, llm_tool, validator_tool
+
+# LLM
+llm = ChatGroq(
+    groq_api_key="api key",
+    model_name="llama-3.3-70b-versatile"
 )
 
-# 🔹 Main Function
-def extract_data(email_text):
+# Tool List
+tools = [email_tool, llm_tool,validator_tool]
 
-    print("\n🧠 Sending data to Groq...\n")
+# ReAct Agent
+agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
 
-    prompt = f"""
-Extract ONLY the first 5 financial transactions
-from this email and return a VALID JSON array.
+# Run Agent
+response = agent.run(
+    "Fetch the latest financial email and extract structured transaction details."
+)
 
-Email:
-{email_text}
-
-Return ONLY pure JSON.
-
-Fields:
-customer_name,
-transaction_id,
-amount,
-payment_method,
-account_number,
-transaction_date,
-currency,
-transaction_type,
-merchant_name,
-status
-"""
-
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-
-            temperature=0
-        )
-
-        output = response.choices[0].message.content
-
-        print("🤖 GROQ RESPONSE:\n")
-        print(output)
-
-        return output
-
-    except Exception as e:
-
-        print("❌ GROQ ERROR:", e)
-
-        return "LLM FAILED"
+print("\n FINAL OUTPUT:\n")
+print(response)
