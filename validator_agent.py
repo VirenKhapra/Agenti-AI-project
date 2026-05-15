@@ -1,83 +1,64 @@
 import json
 
-# 🔹 Validation Agent
-def validate_extracted_data(email_text, extracted_json):
+def validate_data(data):
 
-    print("\n🔍 VALIDATION AGENT STARTED...\n")
+    required_fields = [
+        "customer_name",
+        "transaction_id",
+        "amount",
+        "payment_method",
+        "account_number",
+        "transaction_date",
+        "currency",
+        "transaction_type",
+        "merchant_name",
+        "status"
+    ]
 
     try:
 
-        # Remove markdown formatting from Groq response
-        cleaned_json = extracted_json.replace("```json", "")
-        cleaned_json = cleaned_json.replace("```", "")
+        cleaned_data = (
+            data.replace("```json", "")
+                .replace("```", "")
+                .strip()
+        )
 
-        # Convert JSON string into Python list
-        data = json.loads(cleaned_json)
+        parsed = json.loads(cleaned_data)
 
-        verified_data = []
+        # Ensure JSON is a list
+        if not isinstance(parsed, list):
 
-        # Loop through all extracted transactions
-        for entry in data:
+            return {
+                "status": "invalid",
+                "error": "Expected a JSON array"
+            }
 
-            verified_entry = {}
+        missing_fields = []
 
-            # -----------------------------
-            # CUSTOMER NAME VALIDATION
-            # -----------------------------
-            customer_name = entry.get("customer_name", "")
+        # Validate each transaction
+        for transaction in parsed:
 
-            if customer_name.lower() in email_text.lower():
-                verified_entry["customer_name"] = customer_name
-                print(f"✅ Customer verified: {customer_name}")
+            for field in required_fields:
 
-            else:
-                print(f"❌ Customer failed: {customer_name}")
+                if field not in transaction or transaction[field] == "":
 
-            # -----------------------------
-            # TRANSACTION ID VALIDATION
-            # -----------------------------
-            transaction_id = entry.get("transaction_id", "")
+                    missing_fields.append(field)
 
-            if transaction_id in email_text:
-                verified_entry["transaction_id"] = transaction_id
-                print(f"✅ Transaction verified: {transaction_id}")
+        if missing_fields:
 
-            else:
-                print(f"❌ Transaction failed: {transaction_id}")
+            return {
+                "status": "invalid",
+                "missing_fields": list(set(missing_fields))
+            }
 
-            # -----------------------------
-            # AMOUNT VALIDATION
-            # -----------------------------
-            amount = str(entry.get("amount", ""))
-
-            if amount in email_text:
-                verified_entry["amount"] = amount
-                print(f"✅ Amount verified: {amount}")
-
-            else:
-                print(f"❌ Amount failed: {amount}")
-
-            # -----------------------------
-            # PAYMENT METHOD VALIDATION
-            # -----------------------------
-            payment_method = entry.get("payment_method", "")
-
-            if payment_method.lower() in email_text.lower():
-                verified_entry["payment_method"] = payment_method
-                print(f"✅ Payment method verified: {payment_method}")
-
-            else:
-                print(f"❌ Payment method failed: {payment_method}")
-
-            # Add only verified records
-            if verified_entry:
-                verified_data.append(verified_entry)
-
-        print("\n🎯 FINAL VERIFIED JSON:\n")
-        print(json.dumps(verified_data, indent=4))
-
-        return verified_data
+        return {
+            "status": "valid",
+            "data": parsed
+        }
 
     except Exception as e:
-        print("❌ VALIDATION ERROR:", e)
-        return []
+
+        return {
+            "status": "invalid",
+            "error": str(e)
+        }
